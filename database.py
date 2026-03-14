@@ -6,7 +6,8 @@ import os
 import time
 import re
 import socket
-from typing import Optional
+import logging
+from typing import Optional, Any
 from elasticsearch import Elasticsearch
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "file_guessr.db")
@@ -395,14 +396,14 @@ def _search_es(query: str, limit: int = 20) -> list[dict]:
                     "tie_breaker": 0.3
                 }
             },
-            # 3. Expanded word matching
+            # 3. Expanded word matching (Broad fields)
             {
                 "multi_match": {
                     "query": query,
-                    "fields": ["file_name^5", "keywords.full^5"],
+                    "fields": ["keywords.full^5", "file_name^5", "summary^3", "raw_text^1"],
                     "type": "best_fields",
                     "operator": "or",
-                    "minimum_should_match": min_match,
+                    "minimum_should_match": "1",
                     "boost": 4.0,
                     "tie_breaker": 0.3
                 }
@@ -450,7 +451,7 @@ def _search_es(query: str, limit: int = 20) -> list[dict]:
         # Wrap everything in a function_score to implement the keyword ratio logic
         # Ratio = (matched_keywords / total_keywords)
         # Prepare keywords for script score: unique, lowercase, trimmed
-        script_terms = list(set(words))
+        script_terms = list(set(words)) if words else []
         
         final_query = {
             "function_score": {
@@ -468,7 +469,7 @@ def _search_es(query: str, limit: int = 20) -> list[dict]:
                                     // Count how many stored keywords match EXACTLY with any query terms
                                     long matches = 0;
                                     long total = doc['keywords'].size();
-                                    if (total > 0) {
+                                    if (total > 0 && params.query_terms.size() > 0) {
                                         for (int i = 0; i < total; i++) {
                                             String kw = doc['keywords'].get(i).toLowerCase().trim();
                                             boolean found = false;
@@ -504,21 +505,23 @@ def _search_es(query: str, limit: int = 20) -> list[dict]:
 
         body = {
             "size": limit,
-            "min_score": 0.1,
             "query": final_query,
             "_source": ["file_path", "file_name", "file_type", "file_size",
                          "summary", "keywords", "modified_time"],
         }
 
         resp = es.search(index=ES_INDEX, body=body)
+        total_found = resp["hits"]["total"]["value"]
         results = []
         for hit in resp["hits"]["hits"]:
             src = hit["_source"]
             src["relevance"] = hit["_score"]
             results.append(src)
+        
+        print(f"[ES] Search for '{query}' found {total_found} matches, returning {len(results)}")
         return results
     except Exception as e:
-        print(f"[ES] Search error: {e}")
+        print(f"[ES] Search error for query '{query}': {e}")
         return []
 
 
