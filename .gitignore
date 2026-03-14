@@ -1,9 +1,11 @@
-# Python
+# Python core
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+
+# Distribution / packaging
 env/
 build/
 develop-eggs/
@@ -22,7 +24,7 @@ wheels/
 *.egg
 MANIFEST
 
-# Virtual Environment
+# Virtual Environments
 .venv/
 venv/
 ENV/
@@ -35,6 +37,8 @@ venv.bak/
 *.swp
 *.swo
 .vs/
+*.sublime-project
+*.sublime-workspace
 
 # Logs & Database
 *.log
@@ -46,26 +50,40 @@ ai.log
 launcher.log
 server.log
 
-# Elasticsearch Data (if stored locally)
+# Elasticsearch Data
 elasticsearch-*/
 data/
 
-# Debug & Temporary artifacts
+# Debug & Temporary scripts (already deleted, but for safety)
+test_*.py
+verify_*.py
+diagnose*.py
+dump_db.py
+list_db_content.py
+check_db_*.py
+fix_*.py
+force_update.py
+format_report.py
+full_animal_report.py
+final_report_script.py
+qc
+query
+
+# Project specific temp files
 _out.txt
 bad_records_out.txt
 db_out.txt
 es_debug.json
 failed_files.txt
 animal_counts.json
-check_index_debug.py
-test_search.py
-list_db_content.py
-
-# Keep documentation
-!README.md
-!README.txt
-
-# Temporary files
 *.tmp
 temp_image_*.jpg
 temp_image_*.png
+
+# Environment specific
+.env
+.env.local
+
+# Documentation to keep
+!README.md
+!README.txt

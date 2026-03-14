@@ -1,5 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
+cd /d "%~dp0"
 
 echo ==================================================
 echo       File Guessr - Launcher
@@ -94,11 +95,13 @@ echo.
 
 :: Run the launcher in background and close CMD
 echo [INFO] Launching background tray app...
-start "" "venv\Scripts\pythonw.exe" launcher_bg.py
+:: Use absolute-ish path for the script to be safe
+start "" "venv\Scripts\pythonw.exe" "%~dp0launcher_bg.py"
 
 if %errorlevel% neq 0 (
     echo.
-    echo [ERROR] Failed to start launcher.
+    echo [ERROR] Failed to start launcher (Error Level: %errorlevel%).
+    echo Try running: venv\Scripts\python.exe launcher_bg.py manually to see errors.
     pause
     exit /b 1
 )
