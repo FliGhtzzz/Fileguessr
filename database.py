@@ -495,13 +495,13 @@ def _search_es(query: str, limit: int = 20) -> list[dict]:
                         }
                     }
                 ],
-                "boost_mode": "replace"
+                "boost_mode": "multiply"
             }
         }
 
         body = {
             "size": limit,
-            "min_score": 1.0,
+            "min_score": 0.01,
             "query": final_query,
             "_source": ["file_path", "file_name", "file_type", "file_size",
                          "summary", "keywords", "modified_time"],

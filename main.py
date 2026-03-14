@@ -97,6 +97,8 @@ def _open_folder_dialog() -> Optional[str]:
             "root = tk.Tk(); "
             "root.withdraw(); "
             "root.attributes('-topmost', True); "
+            "root.lift(); "
+            "root.focus_force(); "
             "path = filedialog.askdirectory(title='選擇要索引的資料夾'); "
             "print(path if path else ''); "
             "root.destroy()"

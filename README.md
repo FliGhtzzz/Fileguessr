@@ -16,7 +16,7 @@
 ## 📋 系統需求
 
 - **Windows 10/11**
-- **Python 3.10+**
+- **Python 3.10+** (推薦 3.11)
 - **Ollama** (需安裝並執行中)
   - 請至 [ollama.com](https://ollama.com/) 下載安裝
   - 安裝後執行 `ollama pull gemma3:4b` 下載模型
@@ -27,38 +27,28 @@
 
 ## 🚀 快速開始 (Windows)
 
-1. 下載或 Clone 此專案。
-2. **啟動 Elasticsearch** (`bin\elasticsearch.bat`)。
-3. **啟動 Ollama** (確認它在背景運行)。
-4. 雙擊執行 **`run.bat`**。
-5. 瀏覽器會自動打開 **`http://127.0.0.1:8000`**。
+為了確保程式正常運行，請按照以下順序操作：
 
-> 💡 如果沒有安裝 Elasticsearch，搜尋功能會自動降級為 SQLite 模式（無模糊匹配）。
+1. **首次使用**：雙擊執行 **`setup.bat`**。
+   - 這會自動建立虛擬環境、安裝套件，並嘗試偵測/配置你的 Elasticsearch。
+2. **日常啟動**：雙擊執行 **`run.bat`** 或桌面的捷徑。
+   - 這會檢查 Elasticsearch 與 Ollama 狀態，啟動背景伺服器並自動打開瀏覽器 `http://127.0.0.1:8000`。
+3. **管理介面**：程式啟動後會在系統右下角托盤顯示圖示，可右鍵點擊「重啟服務」或「退出」。
 
-## 📁 專案架構
+## 🛠️ 常見問題排除 (Troubleshooting)
 
-- `main.py`: FastAPI Web 伺服器入口。
-- `indexer.py`: 核心索引邏輯，負責處理檔案並存入資料庫與 Elasticsearch。
-- `llm.py`: Ollama API 介面，負責生成檔案描述與關鍵字。
-- `database.py`: SQLite 資料庫管理。
-- `watcher.py`: 檔案系統監控，即時追蹤資料夾變動。
-- `searcher.py`: 搜尋邏輯，整合 Elasticsearch 與 SQLite。
-- `static/`: 前端網頁介面。
-- `run.bat`: 便捷的啟動腳本。
+### 1. 搜尋不到結果？
+- **確認 Ollama 狀態**：在終端機執行 `ollama list`，確認 `gemma3:4b` 已下載且服務正在運行。
+- **重新索引**：若檔案有大幅變動，可在 Settings 頁面點擊「Clear Index」後重新加入資料夾。
+- **檢查日誌**：點擊網頁介面下方的「AI 引擎日誌」查看有無報錯。
 
-## 🛠️ 開發人員安裝
+### 2. 資料夾選擇器（Folder Picker）沒反應？
+- **檢查視窗焦點**：有時選擇器視窗會彈在主瀏覽器視窗後方，請檢查工具列。
+- **管理員權限**：若嘗試索引系統保護的資料夾，請嘗試以管理員身分點擊 `run.bat`。
 
-```bash
-# 1. 建立虛擬環境
-python -m venv .venv
-.venv\Scripts\activate
-
-# 2. 安裝相依套件
-pip install -r requirements.txt
-
-# 3. 啟動伺服器
-python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload
-```
+### 3. Elasticsearch 連線失敗？
+- 請確保你已手動下載並啟動 Elasticsearch。
+- 預設位址應為 `http://localhost:9200`。如果是使用 HTTPS 且啟動了安全性（Security），請在 `setup.bat` 期間提供正確的 `elastic` 密碼。
 
 ## 📄 授權
 
