@@ -92,12 +92,18 @@ echo.
 echo [INFO] Starting File Guessr...
 echo.
 
-:: Run the launcher directly using venv python
-"venv\Scripts\python.exe" launcher_bg.py
+:: Run the launcher in background and close CMD
+echo [INFO] Launching background tray app...
+start "" "venv\Scripts\pythonw.exe" launcher_bg.py
 
 if %errorlevel% neq 0 (
     echo.
-    echo [ERROR] Application crashed with code %errorlevel%
+    echo [ERROR] Failed to start launcher.
+    pause
+    exit /b 1
 )
 
-pause
+echo [SUCCESS] App is starting in background. Check the system tray icon.
+timeout /t 3 >nul
+exit /b 0
+

@@ -108,12 +108,14 @@ def _open_folder_dialog() -> Optional[str]:
             capture_output=True, text=True, timeout=120
         )
         path = result.stdout.strip()
+        if result.stderr:
+            print(f"[Browse] Subprocess stderr: {result.stderr.strip()}")
         return path if path else None
     except subprocess.TimeoutExpired:
-        print("[Browse] Dialog timed out")
+        print("[Browse] Dialog timed out (120s limit)")
         return None
     except Exception as e:
-        print(f"[Browse] Error: {e}")
+        print(f"[Browse] Unexpected error launching dialog: {e}")
         return None
 
 
