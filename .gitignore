@@ -46,3 +46,6 @@ es_debug.json
 server.log
 ai.log
 launcher.log
+
+# Scripts to keep
+!setup.bat
