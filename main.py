@@ -325,6 +325,31 @@ async def file_preview(path: str = Query(...)):
     return FileResponse(path)
 
 
+@app.get("/api/file/open-folder")
+async def open_file_folder(path: str = Query(...)):
+    """Open the folder containing the file in Windows Explorer."""
+    if not os.path.exists(path):
+        return JSONResponse({"error": "File or folder not found"}, status_code=404)
+
+    try:
+        # Get the directory path
+        if os.path.isfile(path):
+            folder_path = os.path.dirname(path)
+        else:
+            folder_path = path
+
+        # Use os.startfile for Windows (native)
+        # This is safe because the server runs on the user's machine
+        if os.name == 'nt':
+            os.startfile(folder_path)
+            return {"message": f"Opened folder: {folder_path}"}
+        else:
+            return JSONResponse({"error": "Open folder is only supported on Windows"}, status_code=400)
+    except Exception as e:
+        print(f"[OpenFolder] Error: {e}")
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

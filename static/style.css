@@ -406,8 +406,19 @@ svg {
 
 .result-header {
     display: flex;
-    align-items: flex-start;
+    align-items: center; /* Changed from flex-start to center for better alignment */
     gap: 16px;
+}
+
+.result-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: var(--transition);
+}
+
+.result-card:hover .result-actions {
+    opacity: 1;
 }
 
 .btn-icon-ghost {
@@ -421,11 +432,6 @@ svg {
     align-items: center;
     justify-content: center;
     transition: var(--transition);
-    opacity: 0;
-}
-
-.result-card:hover .btn-icon-ghost {
-    opacity: 1;
 }
 
 .btn-icon-ghost:hover {

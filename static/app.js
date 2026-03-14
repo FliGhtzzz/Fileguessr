@@ -229,9 +229,14 @@ function renderResult(r, index, expandedQuery, originalQuery) {
                     <h3>${highlightedName}</h3>
                     <div class="result-path">${escapeHtml(r.file_path)}</div>
                 </div>
-                <button class="btn-icon-ghost" onclick="event.stopPropagation(); showFileDetails(${index})" title="查看完整資訊" style="margin-left: auto;">
-                    <i data-lucide="info" class="icon-sm"></i>
-                </button>
+                <div class="result-actions" style="margin-left: auto; display: flex; gap: 4px;">
+                    <button class="btn-icon-ghost" onclick="event.stopPropagation(); openFolder('${escapeAttr(r.file_path)}')" title="開啟資料夾">
+                        <i data-lucide="folder-open" class="icon-sm"></i>
+                    </button>
+                    <button class="btn-icon-ghost" onclick="event.stopPropagation(); showFileDetails(${index})" title="查看完整資訊">
+                        <i data-lucide="info" class="icon-sm"></i>
+                    </button>
+                </div>
             </div>
             <div class="result-summary">${highlightedSummary || '無詳細描述'}</div>
             <div class="result-tags">
@@ -548,6 +553,16 @@ function copyPath(path) {
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 2000);
     });
+}
+
+function openFolder(path) {
+    fetch(`${API}/api/file/open-folder?path=${encodeURIComponent(path)}`)
+        .then(res => {
+            if (!res.ok) throw new Error('無法開啟資料夾');
+        })
+        .catch(err => {
+            alert('錯誤: ' + err.message);
+        });
 }
 async function showAiLogs() {
     try {

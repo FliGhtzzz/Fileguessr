@@ -83,7 +83,7 @@ if "!ES_STATE!" == "RUNNING" (
 :: Check if venv exists
 if not exist "venv\Scripts\python.exe" (
     echo [ERROR] Virtual environment not found!
-    echo Please run deploy.bat first.
+    echo Please run setup.bat first.
     pause
     exit /b 1
 )
