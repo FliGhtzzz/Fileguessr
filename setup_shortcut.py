@@ -5,6 +5,15 @@ import subprocess
 def create_shortcut():
     # 1. Get paths
     desktop = os.path.join(os.environ["USERPROFILE"], "Desktop")
+    if not os.path.exists(desktop):
+        # Fallback if Desktop is redirected to OneDrive etc.
+        import winreg
+        try:
+            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders")
+            desktop, _ = winreg.QueryValueEx(key, "Desktop")
+        except:
+            desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+
     shortcut_path = os.path.join(desktop, "File Guessr.lnk")
     
     project_root = os.path.dirname(os.path.abspath(__file__))
@@ -27,17 +36,15 @@ def create_shortcut():
 
     print(f"Project Root: {project_root}")
     print(f"Targeting Python: {pythonw_exe}")
-    # 2. PowerShell command (Simplified and more standard)
-    # We use escaped double quotes for the arguments part specifically
+    # 2. PowerShell command
+    icon_ps = f'$Shortcut.IconLocation = "{icon_path}"' if os.path.exists(icon_path) else ""
     ps_command = f"""
     $WshShell = New-Object -ComObject WScript.Shell
     $Shortcut = $WshShell.CreateShortcut("{shortcut_path}")
     $Shortcut.TargetPath = "{vbs_path}"
     $Shortcut.WorkingDirectory = "{project_root}"
     $Shortcut.Description = "File Guessr - Natural Language Search"
-    if (Test-Path "{icon_path}") {{
-        $Shortcut.IconLocation = "{icon_path}"
-    }}
+    {icon_ps}
     $Shortcut.Save()
     """
     

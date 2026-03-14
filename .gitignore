@@ -41,7 +41,7 @@ animal_counts.json
 animal_report.md
 bad_records_out.txt
 db_out.txt
-_out.txt
+*_out.txt
 es_debug.json
 server.log
 ai.log

@@ -11,6 +11,5 @@ chardet==5.2.0
 aiofiles==24.1.0
 python-multipart==0.0.9
 watchdog
-customtkinter
 pystray
 elasticsearch
