@@ -33,45 +33,67 @@ if not exist "venv" (
 call venv\Scripts\activate.bat
 python -m pip install --upgrade pip
 pip install -r requirements.txt
-if %errorlevel% neq 0 (echo [ERROR] Dependency installation failed! & pause & exit /b 1)
+if %errorlevel% neq 0 (
+    echo [ERROR] Dependency installation failed!
+    pause & exit /b 1
+)
 
 :: --- Part 2: Elasticsearch Configuration ---
 echo.
 echo [3/4] Detecting and Configuring Elasticsearch...
 set "ES_HOME="
-echo Searching for Elasticsearch in common folders...
-for %%D in (C:\ D:\ E:\ %USERPROFILE%\Downloads %USERPROFILE%\Desktop) do (
+
+:: Strategy 1: Fast scan of common locations (up to 2 levels deep)
+echo Searching common paths...
+set "SEARCH_PATHS=C:\ D:\ E:\ %USERPROFILE%\Downloads %USERPROFILE%\Desktop"
+for %%D in (!SEARCH_PATHS!) do (
     if exist "%%D" (
-        for /f "delims=" %%F in ('dir /s /b "%%Delasticsearch.bat" 2^>nul') do (
-            set "POTENTIAL_HOME=%%~dpF\.."
-            if exist "!POTENTIAL_HOME!\config\elasticsearch.yml" (
-                set "ES_HOME=!POTENTIAL_HOME!"
+        for /d %%P in ("%%D*") do (
+            if exist "%%P\bin\elasticsearch.bat" (
+                set "ES_HOME=%%~fP"
                 goto :ES_FOUND
+            )
+            for /d %%S in ("%%P\*") do (
+                if exist "%%S\bin\elasticsearch.bat" (
+                    set "ES_HOME=%%~fS"
+                    goto :ES_FOUND
+                )
             )
         )
     )
 )
 
-:ES_FOUND
+:: Strategy 2: Prompt user if not found fast
 if not defined ES_HOME (
     echo [!] Could not automatically find Elasticsearch.
-    echo [!] Search functionality will fallback to SQLite (no fuzzy search).
-    goto :SHORTCUT
+    set /p "ES_HOME=Please drag and drop your Elasticsearch folder here (or press Enter to skip): "
+    if "!ES_HOME!"=="" (
+        echo [INFO] Skipping Elasticsearch setup. Falling back to SQLite.
+        goto :SHORTCUT
+    )
+    :: Remove quotes if user dragged and dropped
+    set "ES_HOME=!ES_HOME:"=!"
 )
 
+:ES_FOUND
+if not exist "!ES_HOME!\config\elasticsearch.yml" (
+    echo [ERROR] Invalid Elasticsearch folder: !ES_HOME!
+    echo (Could not find config\elasticsearch.yml)
+    pause & goto :SHORTCUT
+)
+
+echo.
 echo Detected Elasticsearch at: !ES_HOME!
 set "CONFIG_FILE=!ES_HOME!\config\elasticsearch.yml"
-if exist "!CONFIG_FILE!" (
-    echo Disabling Elasticsearch security features for local use...
-    copy "!CONFIG_FILE!" "!CONFIG_FILE!.bak" >nul 2>&1
-    powershell -Command "$c = gc '!CONFIG_FILE!'; $c = $c -replace 'xpack.security.enabled:.*', 'xpack.security.enabled: false'; $c = $c -replace 'enabled: true', 'enabled: false'; [System.IO.File]::WriteAllLines('!CONFIG_FILE!', $c, [System.Text.Encoding]::ASCII)"
-)
+echo Disabling security features...
+copy "!CONFIG_FILE!" "!CONFIG_FILE!.bak" >nul 2>&1
+powershell -Command "$c = gc '!CONFIG_FILE!'; $c = $c -replace 'xpack.security.enabled:.*', 'xpack.security.enabled: false'; $c = $c -replace 'enabled: true', 'enabled: false'; [System.IO.File]::WriteAllLines('!CONFIG_FILE!', $c, [System.Text.Encoding]::ASCII)"
 
 set "ES_SERVICE_NAME=elasticsearch-service-x64"
 sc query "!ES_SERVICE_NAME!" >nul 2>&1
 if %errorlevel% neq 0 (
     if exist "!ES_HOME!\bin\elasticsearch-service.bat" (
-        echo Installing Elasticsearch Windows service...
+        echo Installing Windows service...
         call "!ES_HOME!\bin\elasticsearch-service.bat" install
     )
 )
