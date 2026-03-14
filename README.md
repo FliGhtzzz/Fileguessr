@@ -78,6 +78,8 @@ python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 - `llm.py`: 與 Ollama 互動，進行自然語言擴展與圖片描述。
 - `file_parser.py`: 檔案內容提取（PDF, DOCX, PPTX, XLSX, TXT 等）。
 - `watcher.py`: 檔案系統即時監控。
+- `launcher_bg.py`: 背景啟動器。
+- `setup_shortcut.py`: 設定桌面快捷鍵。
 - `static/`: 前端 HTML/JS/CSS 資源。
 
 ## ❓ 常見問題與排除

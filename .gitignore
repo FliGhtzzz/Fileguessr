@@ -5,6 +5,7 @@ __pycache__/
 
 # Virtual Environment
 venv/
+.venv/
 env/
 .env
 
@@ -26,18 +27,13 @@ desktop.ini
 
 # Logs
 *.log
-launcher.log
 
 # Debug & Temporary scripts
 debug_bg.py
 SUCCESS.txt
 DIR_WORKS.txt
-diagnose.py
-diagnose_stale.py
 debug_run.bat
 run_diagnose.bat
-run.bat
-fix_environment.bat
 *.tmp
 
 # Generated files
@@ -50,4 +46,3 @@ es_debug.json
 server.log
 ai.log
 launcher.log
-
