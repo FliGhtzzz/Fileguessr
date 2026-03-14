@@ -6,8 +6,7 @@ import os
 import time
 import re
 import socket
-import logging
-from typing import Optional, Any
+from typing import Optional
 from elasticsearch import Elasticsearch
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "file_guessr.db")
@@ -61,7 +60,7 @@ def _get_es() -> Optional[Elasticsearch]:
             continue
 
         try:
-            kwargs: dict[str, Any] = {}
+            kwargs = {}
             if url.startswith("https://"):
                 kwargs["verify_certs"] = False
                 kwargs["ssl_show_warn"] = False
@@ -369,9 +368,7 @@ def _search_es(query: str, limit: int = 20) -> list[dict]:
         }
     else:
         # Improved multi-match strategy for long conceptual queries
-        # Strip punctuation and split by spaces or commas
-        query_clean = re.sub(r'[,\.;!?]', ' ', query)
-        words = query_clean.lower().split()
+        words = query.lower().split()
         # For short queries (1-3 words), require fewer matches. For longer ones, require more.
         min_match = "1" if len(words) <= 3 else "30%"
 
@@ -396,14 +393,14 @@ def _search_es(query: str, limit: int = 20) -> list[dict]:
                     "tie_breaker": 0.3
                 }
             },
-            # 3. Expanded word matching (Broad fields)
+            # 3. Expanded word matching
             {
                 "multi_match": {
                     "query": query,
-                    "fields": ["keywords.full^5", "file_name^5", "summary^3", "raw_text^1"],
+                    "fields": ["file_name^5", "keywords.full^5"],
                     "type": "best_fields",
                     "operator": "or",
-                    "minimum_should_match": "1",
+                    "minimum_should_match": min_match,
                     "boost": 4.0,
                     "tie_breaker": 0.3
                 }
@@ -450,9 +447,6 @@ def _search_es(query: str, limit: int = 20) -> list[dict]:
     try:
         # Wrap everything in a function_score to implement the keyword ratio logic
         # Ratio = (matched_keywords / total_keywords)
-        # Prepare keywords for script score: unique, lowercase, trimmed
-        script_terms = list(set(words)) if words else []
-        
         final_query = {
             "function_score": {
                 "query": {
@@ -469,9 +463,9 @@ def _search_es(query: str, limit: int = 20) -> list[dict]:
                                     // Count how many stored keywords match EXACTLY with any query terms
                                     long matches = 0;
                                     long total = doc['keywords'].size();
-                                    if (total > 0 && params.query_terms.size() > 0) {
+                                    if (total > 0) {
                                         for (int i = 0; i < total; i++) {
-                                            String kw = doc['keywords'].get(i).toLowerCase().trim();
+                                            String kw = doc['keywords'].get(i).toLowerCase();
                                             boolean found = false;
                                             for (String term : params.query_terms) {
                                                 if (kw.equals(term)) {
@@ -489,11 +483,13 @@ def _search_es(query: str, limit: int = 20) -> list[dict]:
                                     double final_total = (double)Math.max(1, total);
                                     double ratio = (double)matches / final_total;
                                     
-                                    // Return a multiplier.
+                                    // Return a multiplier. If ratio is high, boost VERY significantly.
+                                    // High-density files (like a lion image where 'lion' is its primary tag)
+                                    // will now clearly win over generic 'sea lion' mentions.
                                     return _score * (1.0 + ratio * 10.0);
                                 """,
                                 "params": {
-                                    "query_terms": script_terms
+                                    "query_terms": words
                                 }
                             }
                         }
@@ -505,23 +501,21 @@ def _search_es(query: str, limit: int = 20) -> list[dict]:
 
         body = {
             "size": limit,
+            "min_score": 1.0,
             "query": final_query,
             "_source": ["file_path", "file_name", "file_type", "file_size",
                          "summary", "keywords", "modified_time"],
         }
 
         resp = es.search(index=ES_INDEX, body=body)
-        total_found = resp["hits"]["total"]["value"]
         results = []
         for hit in resp["hits"]["hits"]:
             src = hit["_source"]
             src["relevance"] = hit["_score"]
             results.append(src)
-        
-        print(f"[ES] Search for '{query}' found {total_found} matches, returning {len(results)}")
         return results
     except Exception as e:
-        print(f"[ES] Search error for query '{query}': {e}")
+        print(f"[ES] Search error: {e}")
         return []
 
 
@@ -543,14 +537,14 @@ def _search_sqlite_fallback(query: str, limit: int = 20) -> list[dict]:
             conn.close()
             return []
 
-        # Build conditions for each term - simple LIKE for robust fallback
+        # Build conditions for each term - exact matching within comma-separated list
         conditions = []
-        params: list[str] = []
+        params = []
         for term in terms:
             conditions.append(
-                "(file_name LIKE ? OR keywords LIKE ?)"
+                "(file_name LIKE ? OR (',' || keywords || ',') LIKE ?)"
             )
-            params.extend([f"%{term}%", f"%{term}%"])
+            params.extend([f"%{term}%", f"%,{term},%"])
 
         where_clause = " OR ".join(conditions)
         rows = conn.execute(f"""
@@ -558,7 +552,7 @@ def _search_sqlite_fallback(query: str, limit: int = 20) -> list[dict]:
                    summary, keywords, modified_time
             FROM files
             WHERE {where_clause}
-            ORDER BY id DESC
+            ORDER BY modified_time DESC
             LIMIT ?
         """, params + [limit]).fetchall()
 

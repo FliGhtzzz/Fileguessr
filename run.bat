@@ -13,7 +13,7 @@ set "ES_SERVICE_NAME=elasticsearch-service-x64"
 sc query "!ES_SERVICE_NAME!" >nul 2>&1
 if %errorlevel% neq 0 (
     echo [WARNING] Elasticsearch service not found. 
-    echo Please run setup.bat first to install the service.
+    echo Please run deploy.bat first to install the service.
     echo Searching will use SQLite fallback.
     goto :START_APP
 )
@@ -35,14 +35,14 @@ if "!ES_STATE!" neq "RUNNING" (
         echo [!] Could not start service normally. Attempting to elevate...
         powershell -Command "Start-Process cmd -ArgumentList '/c sc start !ES_SERVICE_NAME!' -Verb RunAs"
         
-        echo [INFO] Waiting for service to initialize (up to 20 seconds)...
+        echo [INFO] Waiting for service to initialize (up to 30 seconds)...
         set /a wait_retry=0
         :WAIT_SERVICE_START
         timeout /t 3 /nobreak >nul
         for /f "tokens=4" %%s in ('sc query "!ES_SERVICE_NAME!" ^| findstr STATE') do set "ES_STATE=%%s"
         if "!ES_STATE!" neq "RUNNING" (
             set /a wait_retry+=1
-            if !wait_retry! lss 7 (
+            if !wait_retry! lss 10 (
                 <nul set /p=.
                 goto :WAIT_SERVICE_START
             )
@@ -65,7 +65,7 @@ if "!ES_STATE!" == "RUNNING" (
         echo [SUCCESS] Elasticsearch is ready.
     ) else (
         set /a retry_count+=1
-        if !retry_count! lss 10 (
+        if !retry_count! lss 15 (
             <nul set /p=.
             timeout /t 3 /nobreak >nul
             goto :WAIT_ES
@@ -83,7 +83,7 @@ if "!ES_STATE!" == "RUNNING" (
 :: Check if venv exists
 if not exist "venv\Scripts\python.exe" (
     echo [ERROR] Virtual environment not found!
-    echo Please run setup.bat first.
+    echo Please run deploy.bat first.
     pause
     exit /b 1
 )
@@ -93,9 +93,11 @@ echo [INFO] Starting File Guessr...
 echo.
 
 :: Run the launcher directly using venv python
-start "" "venv\Scripts\pythonw.exe" launcher_bg.py
+"venv\Scripts\python.exe" launcher_bg.py
 
-echo [SUCCESS] Application launched in background.
-echo Check the system tray icon for options.
-timeout /t 3 /nobreak >nul
-exit /b 0
+if %errorlevel% neq 0 (
+    echo.
+    echo [ERROR] Application crashed with code %errorlevel%
+)
+
+pause

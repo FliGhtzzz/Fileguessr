@@ -10,12 +10,12 @@
 - 🖼️ **圖片理解**: 自動分析圖片內容並生成描述，讓圖片也能用文字搜尋。
 - ⚡ **智能排序**: Elasticsearch 多欄位加權 + BM25 相關性排序。
 - 📂 **動態監控**: 自動偵測資料夾變更（新增/修改檔案），即時更新搜尋索引。
-- 🚀 **輕鬆部署**: 支援標準 Python 虛擬環境，幾行指令即可啟動。
+- 🚀 **一鍵部署**: 內附 `run.bat` 腳本，Windows 用戶可輕鬆安裝使用。
 
 ## 📋 系統需求
 
 - **Windows 10/11**
-- **Python 3.10+** (需加入環境變數 PATH)
+- **Python 3.10+**
 - **Ollama** (需安裝並執行中)
   - 請至 [ollama.com](https://ollama.com/) 下載安裝
   - 安裝後執行 `ollama pull gemma3:4b` 下載模型
@@ -29,68 +29,36 @@
 1. 下載或 Clone 此專案。
 2. **啟動 Elasticsearch** (`bin\elasticsearch.bat`)。
 3. **啟動 Ollama** (確認它在背景運行)。
-4. 雙擊執行 **`setup.bat`** (僅需執行一次即可建立桌面捷徑)。
-5. 之後只需雙擊桌面的 **「File Guessr」** 捷徑即可啟動！
+4. 雙擊執行 **`run.bat`**。
+5. 瀏覽器會自動打開 **`http://127.0.0.1:8000`**。
 
 > 💡 如果沒有安裝 Elasticsearch，搜尋功能會自動降級為 SQLite 模式（無模糊匹配）。
 
-## 🛠️ 手動安裝
+## 📁 專案架構
+
+- `main.py`: FastAPI Web 伺服器入口。
+- `indexer.py`: 核心索引邏輯，負責處理檔案並存入資料庫與 Elasticsearch。
+- `llm.py`: Ollama API 介面，負責生成檔案描述與關鍵字。
+- `database.py`: SQLite 資料庫管理。
+- `watcher.py`: 檔案系統監控，即時追蹤資料夾變動。
+- `searcher.py`: 搜尋邏輯，整合 Elasticsearch 與 SQLite。
+- `static/`: 前端網頁介面。
+- `run.bat`: 便捷的啟動腳本。
+
+## 🛠️ 開發人員安裝
 
 ```bash
 # 1. 建立虛擬環境
-python -m venv venv
-venv\Scripts\activate
+python -m venv .venv
+.venv\Scripts\activate
 
 # 2. 安裝相依套件
 pip install -r requirements.txt
 
-# 3. 下載 AI 模型
-ollama pull gemma3:4b
-
-# 4. 啟動 Elasticsearch
-# (在另一個終端) bin\elasticsearch.bat
-
-# 5. 啟動伺服器
+# 3. 啟動伺服器
 python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 ```
-
-## 📖 如何使用
-
-1. 點擊右上角的 **⚙️ (設定)** 圖示。
-2. 輸入想要索引的資料夾路徑 (例如 `D:\Photos`)。
-3. 點擊 **開始索引**。
-4. 等待索引完成後，在首頁搜尋框輸入描述即可！
-
-## 🏗️ 系統架構
-
-- **後端**: FastAPI (Python web 框架)
-- **搜尋引擎**: Elasticsearch (模糊搜尋 + 相關性排序)
-- **資料庫**: SQLite (本地元數據存儲)
-- **AI 模型**: Ollama API (預設使用 Gemma 3 4B)
-- **前端**: Vanilla JS + CSS (現代感玻璃擬態風格 UI)
-
-## 📂 專案結構
-
-- `main.py`: FastAPI 核心伺服器，處理 API 請求。
-- `indexer.py`: 負責掃描資料夾並將檔案資訊寫入索引。
-- `searcher.py`: 整合 Elasticsearch 與 SQLite 的搜尋邏輯。
-- `database.py`: 管理 SQLite 資料庫與 Elasticsearch 連線。
-- `llm.py`: 與 Ollama 互動，進行自然語言擴展與圖片描述。
-- `file_parser.py`: 檔案內容提取（PDF, DOCX, PPTX, XLSX, TXT 等）。
-- `watcher.py`: 檔案系統即時監控。
-- `launcher_bg.py`: 背景啟動器。
-- `setup_shortcut.py`: 設定桌面快捷鍵。
-- `static/`: 前端 HTML/JS/CSS 資源。
-
-## ❓ 常見問題與排除
-
-- **搜尋不到檔案？**
-  - **初次安裝/換電腦**: 搜尋索引是存在本地的。在新電腦啟動後，請務必點擊介面右上角的 **⚙️ (設定)**，選擇資料夾並點擊 **「開始索引」**。
-  - **Elasticsearch 未啟動**: 雖然應用程式會自動嘗試啟動服務，但如果失败，會降級為 SQLite 模式（不支援模糊搜尋）。請確保以管理員權限執行過一次 `setup.bat`。
-- **Ollama 連線失敗**: 請確保 Ollama 桌面應用程式已開啟，且已執行過 `ollama pull gemma3:4b`。
-- **權限問題**: 建議在索引資料夾時，確保程式對該路徑有讀取權限。
 
 ## 📄 授權
 
 MIT License
-

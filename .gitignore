@@ -10,11 +10,10 @@ env/
 .env
 
 # Database
-file_guessr.db
-*.sqlite3
 *.db
-file_guessr.db-wal
-file_guessr.db-shm
+*.db-wal
+*.db-shm
+*.sqlite3
 
 # OS generated files
 .DS_Store
@@ -28,24 +27,15 @@ desktop.ini
 # Logs
 *.log
 
-# Debug & Temporary scripts
-debug_bg.py
-SUCCESS.txt
-DIR_WORKS.txt
-debug_run.bat
-run_diagnose.bat
-*.tmp
-
-# Generated files
-animal_counts.json
-animal_report.md
+# Debug & Temporary artifacts
+_out.txt
 bad_records_out.txt
 db_out.txt
-*_out.txt
 es_debug.json
-server.log
-ai.log
-launcher.log
+failed_files.txt
+animal_counts.json
+*.md
+!README.md
 
-# Scripts to keep
-!setup.bat
+# Temporary files
+*.tmp
